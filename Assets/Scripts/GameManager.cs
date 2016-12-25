@@ -116,11 +116,11 @@ public class GameManager : MonoBehaviour {
                 {
                     Debug.Log("Нашел " + edgeLabel + " в вершине " + vertex.name);
                     Destroy(vertex.edges[i].gameObject);
-                    vertex.Invoke("RemoveRedudanciesEdges",0.1f);
+                    vertex.Invoke("RemoveRedudanciesEdges",0.1f);//УБРАТЬ инвок
                 }
             }
         }
-        Invoke("RemoveRedudanciesEdges", 0.1f);
+        Invoke("RemoveRedudanciesEdges", 0.1f);//УБРАТЬ инвок
     }
     /// <summary>
     /// Удаляет все избыточные записи из списка дуг
@@ -182,10 +182,9 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
-            Debug.Log("Remove");
             RemoveVertexFromList(vert);
             RemoveRedudanciesEdges();
-            CalculateAdjacencyAndIncidentnostMatrix();
+            Invoke("CalculateAdjacencyAndIncidentnostMatrix",0.2f);//УБРАТЬ инвок
         }
     }
     
@@ -195,11 +194,18 @@ public class GameManager : MonoBehaviour {
     {
         Debug.Log("CalculateAdjacencyMatrix");
         string[,] lines = new string[vertexes.Count, vertexes.Count];
-        
+        Debug.Log(vertexes.Count);
         for (int i = 0; i < edges.Count; i++)
         {
-            lines[(int.Parse(edges[i].firstLinkedVertex.name) - 1), (int.Parse(edges[i].secondLinkedVertex.name) - 1)] = "1";
-            lines[(int.Parse(edges[i].secondLinkedVertex.name) - 1), (int.Parse(edges[i].firstLinkedVertex.name) - 1)] = "1";
+            try
+            {
+                lines[(int.Parse(edges[i].firstLinkedVertex.name) - 1), (int.Parse(edges[i].secondLinkedVertex.name)) - 1] = "1";
+                lines[(int.Parse(edges[i].secondLinkedVertex.name) - 1), (int.Parse(edges[i].firstLinkedVertex.name)) - 1] = "1";
+            }
+            catch(System.Exception exp)
+            {
+                Debug.LogError(exp.ToString());
+            }
         }
         for (int i = 0; i < lines.GetLength(0); i++)
         {
@@ -211,15 +217,15 @@ public class GameManager : MonoBehaviour {
         
         string textWithVertNumbers = "", matrixText = "";
         string vertexNumbers = "    ";
-        for (int i = 0; i < lines.GetLength(1) - 1; i++)
+        for (int i = 0; i < lines.GetLength(1); i++)
         {
             vertexNumbers += "<b>" + (i + 1) + "</b> ";
         }
         vertexNumbers += "\n";
-        for (int i = 0; i < lines.GetLength(0) - 1; i++)
+        for (int i = 0; i < lines.GetLength(0); i++)
         {
             textWithVertNumbers += "<b>" + (i + 1) + "</b>  ";
-            for (int j = 0; j < lines.GetLength(1) - 1; j++)
+            for (int j = 0; j < lines.GetLength(1); j++)
             {
                 textWithVertNumbers += lines[i, j] + " ";
                 matrixText += lines[i, j] + " ";
@@ -246,9 +252,9 @@ public class GameManager : MonoBehaviour {
         Debug.Log("CalculateIncidentnostMatrix");
         string edgesNumbers = "    ";
         int edgesCount = 0;
-        for (int i = 0; i < matrix.GetLength(0) - 1; i++)
+        for (int i = 0; i < matrix.GetLength(0); i++)
         {   
-            for (int k = 0; k < matrix.GetLength(1) - 1; k++)
+            for (int k = 0; k < matrix.GetLength(1); k++)
             {
                 if (matrix[i, k] == "1" && i < k)
                 {
@@ -257,13 +263,14 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        string[,] incidentnostMatrix = new string[matrix.GetLength(0) - 1, edgesCount];
+        
+        string[,] incidentnostMatrix = new string[matrix.GetLength(0), edgesCount];
         FillAllZeroInMantrix(incidentnostMatrix);
 
         int column = 0;
-        for (int i = 0; i < matrix.GetLength(0) - 1; i++)
+        for (int i = 0; i < matrix.GetLength(0); i++)
         {
-            for (int k = 0; k < matrix.GetLength(1) - 1; k++)
+            for (int k = 0; k < matrix.GetLength(1); k++)
             {
                 if (matrix[i, k] == "1" && i < k)
                 {
