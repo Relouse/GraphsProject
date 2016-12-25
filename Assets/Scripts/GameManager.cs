@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour {
     //Первая вершина новосоздаваемого ребра и вторая
     private Vertex firstVertexOFEdge, secondVertexOfEdge;
     public bool mouseOnUI = false;//перенести это в Input Manager
+    private string[,] adjacencyMatrix;
     void Awake()
     {
         //Singleton
@@ -55,7 +56,7 @@ public class GameManager : MonoBehaviour {
     void Update()
     {
         //Если нажали левый или правый ctrl
-        if(Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl))
+        if (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl))
         {
             ClearFirstAndSecondChoosedVertexes();
         }
@@ -69,7 +70,7 @@ public class GameManager : MonoBehaviour {
         vertexDraw,
         vertexRemove
     }
-    
+
     private mode curMode = mode.vertexDraw;
     /// <summary>
     /// Текущий режим построения
@@ -116,7 +117,7 @@ public class GameManager : MonoBehaviour {
                 {
                     Debug.Log("Нашел " + edgeLabel + " в вершине " + vertex.name);
                     Destroy(vertex.edges[i].gameObject);
-                    vertex.Invoke("RemoveRedudanciesEdges",0.1f);//УБРАТЬ инвок
+                    vertex.Invoke("RemoveRedudanciesEdges", 0.1f);//УБРАТЬ инвок
                 }
             }
         }
@@ -184,11 +185,11 @@ public class GameManager : MonoBehaviour {
         {
             RemoveVertexFromList(vert);
             RemoveRedudanciesEdges();
-            Invoke("CalculateAdjacencyAndIncidentnostMatrix",0.2f);//УБРАТЬ инвок
+            Invoke("CalculateAdjacencyAndIncidentnostMatrix", 0.2f);//УБРАТЬ инвок
         }
     }
-    
-    
+
+
     //Вычисление матрицы смежности
     public void CalculateAdjacencyAndIncidentnostMatrix()
     {
@@ -202,7 +203,7 @@ public class GameManager : MonoBehaviour {
                 lines[(int.Parse(edges[i].firstLinkedVertex.name) - 1), (int.Parse(edges[i].secondLinkedVertex.name)) - 1] = "1";
                 lines[(int.Parse(edges[i].secondLinkedVertex.name) - 1), (int.Parse(edges[i].firstLinkedVertex.name)) - 1] = "1";
             }
-            catch(System.Exception exp)
+            catch (System.Exception exp)
             {
                 Debug.LogError(exp.ToString());
             }
@@ -214,7 +215,7 @@ public class GameManager : MonoBehaviour {
                 if (string.IsNullOrEmpty(lines[i, j])) lines[i, j] = "0";
             }
         }
-        
+
         string textWithVertNumbers = "", matrixText = "";
         string vertexNumbers = "    ";
         for (int i = 0; i < lines.GetLength(1); i++)
@@ -250,10 +251,11 @@ public class GameManager : MonoBehaviour {
     private void CalculateIncidentnostMatrix(string[,] matrix)
     {
         Debug.Log("CalculateIncidentnostMatrix");
+        adjacencyMatrix = matrix;
         string edgesNumbers = "    ";
         int edgesCount = 0;
         for (int i = 0; i < matrix.GetLength(0); i++)
-        {   
+        {
             for (int k = 0; k < matrix.GetLength(1); k++)
             {
                 if (matrix[i, k] == "1" && i < k)
@@ -263,7 +265,7 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        
+
         string[,] incidentnostMatrix = new string[matrix.GetLength(0), edgesCount];
         FillAllZeroInMantrix(incidentnostMatrix);
 
@@ -280,7 +282,7 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        
+
         edgesNumbers += "\n";
         string incidMatrixComplete = "";
         for (int i = 0; i < incidentnostMatrix.GetLength(0); i++)
@@ -292,7 +294,7 @@ public class GameManager : MonoBehaviour {
             }
             incidMatrixComplete += "\n";
         }
-        UM.DrawIncidentnostMatrixText("<b>" + edgesNumbers +"</b>" + incidMatrixComplete);
+        UM.DrawIncidentnostMatrixText("<b>" + edgesNumbers + "</b>" + incidMatrixComplete);
         CalculateVertexesPows();
     }
     public void CalculateVertexesPows()
@@ -305,6 +307,77 @@ public class GameManager : MonoBehaviour {
         }
         UIManager.Instance.DrawVertexesPowMatrixText(text);
     }
+    
+    struct bfsStruct
+    {
+        public Vertex vert;
+        public enum type
+        {
+            cur,
+            used,
+            normal
+        }
+        public type currentType;
+    }
+    List<bfsStruct> bfsList = new List<bfsStruct>();
+    public void BFS()
+    {
+        foreach (var vertex in vertexes)
+        {
+            bfsList.Add(new bfsStruct { vert = vertex, currentType = bfsStruct.type.cur });
+            foreach (var edge in vertex.edges)
+            {
+                if (edge.firstLinkedVertex != vertex && !edge.firstLinkedVertex.used)
+                {
+                    bfsList.Add(new bfsStruct { vert = edge.firstLinkedVertex, currentType = bfsStruct.type.cur });
+                }
+                if (edge.secondLinkedVertex != vertex && !edge.secondLinkedVertex.used)
+                {
+                    bfsList.Add(new bfsStruct { vert = edge.secondLinkedVertex, currentType = bfsStruct.type.cur });
+                }
+            }
+            if (!vertex.used)
+            {
+                bfsList.Add(new bfsStruct { vert = vertex, currentType = bfsStruct.type.used });
+                vertex.used = true;
+            }
+
+        }
+        HightlightManager();
+        Invoke("ClearBFSResults",1);
+    }
+    void ClearBFSResults()
+    {
+        foreach (var vertex in vertexes)
+        {
+            vertex.used = false;
+            vertex.HightlightAsNormal();
+        }
+    }
+    void HightlightManager()
+    {
+        if (bfsList.Count != 0)
+        {
+            switch (bfsList[0].currentType)
+            {
+                case bfsStruct.type.cur:
+                    bfsList[0].vert.Invoke("HightlightAsCurrent", 1);
+                    break;
+                case bfsStruct.type.used:
+                    bfsList[0].vert.Invoke("HightlightAsUsed", 1);
+                    break;
+                case bfsStruct.type.normal:
+                    break;
+                default:
+                    break;
+            }
+            bfsList.RemoveAt(0);
+            Invoke("HightlightManager", 1);
+        }
+        else CancelInvoke("HightlightManager");
+
+    }
+
 
     //Два нижних метода перенести в InputManager
     /// <summary>

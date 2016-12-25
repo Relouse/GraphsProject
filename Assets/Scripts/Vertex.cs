@@ -7,10 +7,34 @@ public class Vertex : MonoBehaviour {
 
     [SerializeField]
     private Text vertexTitle;
-    
+    public bool used = false;//для bfs
     public List<Edge> edges;
-    
-    
+    private Image img;
+    private Color normalVertexColour = Color.white, currentVertexColour = Color.grey, usedVertexColour = Color.cyan;
+
+    private void Start()
+    {
+        img = transform.FindChild("Canvas/Image").GetComponent<Image>();
+    }
+
+    /// <summary>
+    /// Подсветка вершины как текущей просматриаемой в поиске в ширину
+    /// </summary>
+    public void HightlightAsCurrent()
+    {
+        img.color = currentVertexColour;
+    }
+
+    public void HightlightAsUsed()
+    {
+        img.color = usedVertexColour;
+    }
+    public void HightlightAsNormal()
+    {
+        img.color = normalVertexColour;
+    }
+
+
     public void SetText(string text)
     {
         vertexTitle.text = text;
